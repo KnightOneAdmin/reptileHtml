@@ -19,7 +19,10 @@ fun main() {
 //            println(e.printStackTrace())
 //        }
 //    }
-    thread { parseJianShuPage("https://www.jianshu.com/") }
+    thread {
+//        parseJianShuPage("https://www.jianshu.com/")
+        parse549Page("https://549.tv/")
+    }
 }
 
 /**
@@ -101,6 +104,28 @@ fun parseJianShuPage(url: String) {
     converterJianShuWrite(listData)
 }
 
+
+/**
+ *
+ */
+fun parse549Page(url: String) {
+    var connect: Connection = Jsoup.connect(url).timeout(5000)
+        .userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36")
+        .method(Connection.Method.GET)
+    val document: Document = connect.get()
+    val element = document.getElementById("content")
+//    println("document:${document.body()}")
+    val elements = element?.getElementById("term-27")
+    val elements1 = elements?.select("li.url-card")
+//    println("elements1:${elements1?.toString()}")
+    elements1?.forEach {
+        val title = it.select("div.url-info flex-fill > h5 ").get(0)?.text().toString()
+        println("title:$title")
+    }
+
+}
+
+
 /**
  * 日期、数字或者自定义格式转换
  * <p>
@@ -114,7 +139,7 @@ fun converterJianShuWrite(listData: ArrayList<JianShuEntity>) {
     val path = "converterJianShuWrite" + ".xlsx"
     val fileName = FileUtils.createNewFile(path)
     println("fileName:$fileName")
-    EasyExcel.write(fileName, JianShuEntity::class.java).sheet("简书").doWrite(listData)
+    EasyExcel.write(fileName, JianShuEntity::class.java).sheet("549").doWrite(listData)
 }
 
 
