@@ -6,6 +6,7 @@ import entity.JianShuEntity
 import org.jsoup.Connection
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
 import utils.FileUtils
 import kotlin.collections.ArrayList
 import kotlin.concurrent.thread
@@ -114,15 +115,31 @@ fun parse549Page(url: String) {
         .method(Connection.Method.GET)
     val document: Document = connect.get()
     val element = document.getElementById("content")
-//    println("document:${document.body()}")
-    val elements = element?.getElementById("term-27")
-    val elements1 = elements?.select("li.url-card")
-//    println("elements1:${elements1?.toString()}")
-    elements1?.forEach {
-        val title = it.select("div.url-info flex-fill > h5 ").get(0)?.text().toString()
-        println("title:$title")
-    }
+    getPremiumSiteData(element)
+}
 
+/**
+ *  获取优质站点数据
+ */
+fun getPremiumSiteData(element: Element?) {
+    val elements = element?.getElementById("term-27")
+    val typeTitle = elements?.select("h3")?.text().toString()
+    val elements1 = elements?.select("li.url-card")
+    println("typeTitle:$typeTitle")
+    elements1?.forEach { it ->
+        val title = it.getElementsByClass("url-info flex-fill").select("h5").text().toString()
+        val subTitle = it.getElementsByClass("url-info flex-fill").select("p")[1].text().toString()
+        val url = it.getElementsByClass("url-body default").select("a").attr("href").toString()
+        val imgUrl = it.getElementsByClass("url-img rounded-circle me-3 d-flex align-items-center justify-content-center").select("img")?.attr("data-src").toString()
+        val elementsByClass = it.getElementsByClass("my-2")
+        elementsByClass.forEach { it2 ->
+            println("mark::${it2.select("span").text()}")
+        }
+        println("title:$title")
+        println("subTitle:$subTitle")
+        println("url:$url")
+        println("imgUrl:$imgUrl")
+    }
 }
 
 
