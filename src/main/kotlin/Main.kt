@@ -2,6 +2,7 @@ import cn.hutool.core.date.DateUtil
 import com.alibaba.excel.EasyExcel
 import entity.DocumentData
 import entity.JianShuEntity
+import entity.PremiumSiteEntity
 
 import org.jsoup.Connection
 import org.jsoup.Jsoup
@@ -25,6 +26,16 @@ fun main() {
         parse549Page("https://549.tv/")
     }
 }
+
+
+fun getHtmlIds(): ArrayList<String> {
+    var htmlIds = ArrayList<String>()
+    for (index in 27..40) {
+        htmlIds.add("term-$index")
+    }
+    return htmlIds
+}
+
 
 /**
  * 日期、数字或者自定义格式转换
@@ -99,7 +110,7 @@ fun parseJianShuPage(url: String) {
         val decUrl = url + it.select("a.title").first()?.attr("href").toString()
         val content = it.select("p.abstract").first()?.text().toString()
         val nickname = it.select("div.meta > a").first()?.text().toString()
-        val lickNum = it.select("div.meta > span").get(1)?.text().toString()
+        val lickNum = it.select("div.meta > span")[1]?.text().toString()
         listData.add(buildJianShuData(title, decUrl, nickname, content, lickNum))
     }
     converterJianShuWrite(listData)
@@ -118,28 +129,56 @@ fun parse549Page(url: String) {
     getPremiumSiteData(element)
 }
 
+var typeTitle: String = ""
+var title: String = ""
+var subTitle: String = ""
+var url: String = ""
+var logoUrl: String = ""
+var markers: String = ""
+
 /**
  *  获取优质站点数据
  */
 fun getPremiumSiteData(element: Element?) {
-    val elements = element?.getElementById("term-27")
-    val typeTitle = elements?.select("h3")?.text().toString()
-    val elements1 = elements?.select("li.url-card")
-    println("typeTitle:$typeTitle")
-    elements1?.forEach { it ->
-        val title = it.getElementsByClass("url-info flex-fill").select("h5").text().toString()
-        val subTitle = it.getElementsByClass("url-info flex-fill").select("p")[1].text().toString()
-        val url = it.getElementsByClass("url-body default").select("a").attr("href").toString()
-        val imgUrl = it.getElementsByClass("url-img rounded-circle me-3 d-flex align-items-center justify-content-center").select("img")?.attr("data-src").toString()
-        val elementsByClass = it.getElementsByClass("my-2")
-        elementsByClass.forEach { it2 ->
-            println("mark::${it2.select("span").text()}")
+    var listData = arrayListOf<PremiumSiteEntity>()
+    getHtmlIds().forEach { _ids ->
+        val elements = element?.getElementById(_ids)
+        typeTitle = elements?.select("h3")?.text().toString()
+        val elements1 = elements?.select("li.url-card")
+        elements1?.forEach { it ->
+            title = it.getElementsByClass("url-info flex-fill").select("h5").text().toString()
+            subTitle = it.getElementsByClass("url-info flex-fill").select("p")[1].text().toString()
+            url = it.getElementsByClass("url-body default").select("a").attr("href").toString()
+            logoUrl =
+                it.getElementsByClass("url-img rounded-circle me-3 d-flex align-items-center justify-content-center")
+                    .select("img")?.attr("data-src").toString()
+            val elementsByClass = it.getElementsByClass("my-2")
+            elementsByClass.forEach { it2 ->
+                markers = "${it2.select("span").text()}"
+            }
+            listData.add(buildPremiumSiteData(typeTitle, title, subTitle, url, logoUrl, markers))
         }
-        println("title:$title")
-        println("subTitle:$subTitle")
-        println("url:$url")
-        println("imgUrl:$imgUrl")
     }
+    converterSiteWrite(listData)
+}
+
+fun buildPremiumSiteData(
+    typeTitle: String,
+    title: String,
+    subTitle: String,
+    url: String,
+    logoUrl: String,
+    markers: String,
+): PremiumSiteEntity {
+    var documentData = PremiumSiteEntity()
+    documentData.typeTitle = typeTitle
+    documentData.title = title
+    documentData.subTitle = subTitle
+    documentData.siteUrl = url
+    documentData.logoUrl = logoUrl
+    documentData.markers = markers
+    documentData.date = DateUtil.date()
+    return documentData
 }
 
 
@@ -159,5 +198,12 @@ fun converterJianShuWrite(listData: ArrayList<JianShuEntity>) {
     EasyExcel.write(fileName, JianShuEntity::class.java).sheet("549").doWrite(listData)
 }
 
+
+fun converterSiteWrite(listData: ArrayList<PremiumSiteEntity>) {
+    val path = "converterSiteWrite" + ".xlsx"
+    val fileName = FileUtils.createNewFile(path)
+    println("fileName:$fileName")
+    EasyExcel.write(fileName, PremiumSiteEntity::class.java).sheet("549").doWrite(listData)
+}
 
 
